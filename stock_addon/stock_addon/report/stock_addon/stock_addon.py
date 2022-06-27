@@ -4,24 +4,13 @@ from frappe.utils import date_diff
 def execute(filters=None):
 	columns = get_columns()
 	data = []
-	purchase_date = {}
-	delivery_date = {}
-	sr_no = frappe.db.sql("""
-	select name as sr_no from `tabSerial No`;
+	serial_items = frappe.db.sql("""
+	select name as sr_no, purchase_date, delivery_date from `tabSerial No`;
 	""", as_dict= True)
-	for sr in sr_no:
-		delivery_date = frappe.db.sql("""
-		select posting_date from `tabStock Ledger Entry` where voucher_type = "Delivery Note" and serial_no like "%{}%";
-		""".format(sr.sr_no),as_list= True)
-		delivery_date = delivery_date[0][0] if len(delivery_date) else frappe.utils.nowdate()
-
-		purchase_date = frappe.db.sql("""
-		select posting_date from `tabStock Ledger Entry` where voucher_type = "Purchase Receipt" and serial_no like "%{}%";
-		""".format(sr.sr_no),as_list= True)
-		purchase_date =  purchase_date[0][0] if len(purchase_date) else frappe.utils.nowdate()
-		dis = date_diff(delivery_date,purchase_date)
-		data.append({ "sr_no": sr['sr_no'], "purchase_date": purchase_date, "delivery_date": delivery_date , "dis":  abs(dis)} )
-	return columns, data 
+	for sr in serial_items:
+		delivery_date = sr.delivery_date if sr.delivery_date else frappe.utils.nowdate()
+		data.append({"sr_no":sr.sr_no, "purchase_date": sr.purchase_date, "delivery_date": delivery_date, "dis": date_diff(delivery_date,sr.purchase_date) })
+	return columns, data
 
 def get_columns():
 	columns = [
