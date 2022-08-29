@@ -28,6 +28,15 @@ frappe.query_reports["Customer wise Stockduration of Serial No"] = {
 			// "default": frappe.datetime.get_today(),
 			// "reqd": 1,
 			"width": "60px"
+		},
+		{
+			"fieldname":"commission_by",
+			"label": __(""),
+			"fieldtype": "Select",
+			"options": ["",__("Item Wise"),__("Transaction Wise")],
+			// "default": frappe.datetime.get_today(),
+			// "reqd": 1,
+			"width": "60px"
 		}
 	]
 };
