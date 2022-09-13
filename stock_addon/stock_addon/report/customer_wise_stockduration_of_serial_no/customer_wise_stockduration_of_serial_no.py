@@ -7,9 +7,9 @@ from frappe.utils import date_diff
 def execute(filters=None):
 	columns = get_columns()
 	_filters = ""
-	# if filters:
-	# 	_filters = "where "
-	# 	_filters = _filters + "purchase_date between '" + filters.get("from_date") + "' and '" + filters.get("to_date") +"' AND delivery_date between '"+filters.get("from_date") + "' and '" + filters.get("to_date") +"'" if filters.get("from_date") and filters.get("to_date")  else ""
+	if filters:
+		_filters = "where "
+		_filters = _filters + "purchase_date between '" + filters.get("from_date") + "' and '" + filters.get("to_date") +"' OR delivery_date between '"+filters.get("from_date") + "' and '" + filters.get("to_date") +"'" if filters.get("from_date") and filters.get("to_date")  else ""
 	if filters.get("customer"):
 		columns.append({
 			"fieldname":"customer",
