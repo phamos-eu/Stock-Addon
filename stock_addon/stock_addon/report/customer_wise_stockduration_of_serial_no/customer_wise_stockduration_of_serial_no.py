@@ -7,9 +7,9 @@ from frappe.utils import date_diff
 def execute(filters=None):
 	columns = get_columns()
 	_filters = ""
-	if filters:
-		_filters = "where "
-		_filters = _filters + "purchase_date between '" + filters.get("from_date") + "' and '" + filters.get("to_date") +"' OR delivery_date between '"+filters.get("from_date") + "' and '" + filters.get("to_date") +"'" if filters.get("from_date") and filters.get("to_date")  else ""
+	# if filters:
+	# 	_filters = "where "
+	# 	_filters = _filters + "purchase_date between '" + filters.get("from_date") + "' and '" + filters.get("to_date") +"' OR delivery_date between '"+filters.get("from_date") + "' and '" + filters.get("to_date") +"'" if filters.get("from_date") and filters.get("to_date")  else ""
 	if filters.get("customer"):
 		columns.append({
 			"fieldname":"customer",
@@ -86,6 +86,7 @@ def execute(filters=None):
 		end = sr.delivery_date
 
 		if filters.get("to_date") and filters.get("from_date"):
+
 			if sr.creation_date < frappe.utils.getdate(filters.get("from_date")):
 				start = frappe.utils.getdate(filters.get("from_date"))
 				end = sr.delivery_date
@@ -98,12 +99,18 @@ def execute(filters=None):
 				start = sr.creation_date
 				end = sr.delivery_date
 
+			if sr.creation_date <= frappe.utils.getdate(filters.get("from_date")):
+				start = frappe.utils.getdate(filters.get("from_date"))
+				end = frappe.utils.getdate(filters.get("to_date"))
+				if delivery_date < frappe.utils.getdate(filters.get("to_date")):
+					end = delivery_date
+
 		diff = date_diff(end, start)
 		if diff >= 0:
 			diff = diff+1
 
-		if diff <= 0:
-			diff = ((diff*-1)+1)
+		if diff < 0:
+			continue
 
 		data.append(
 			{
@@ -123,7 +130,7 @@ def execute(filters=None):
 				"commission_t": item_wise_t.kommission if item_wise_t else "-"
 			}
 		)
-
+		
 	return columns, data
 
 def get_columns():
