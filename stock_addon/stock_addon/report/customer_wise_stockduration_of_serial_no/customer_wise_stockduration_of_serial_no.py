@@ -86,7 +86,6 @@ def execute(filters=None):
 		end = sr.delivery_date
 
 		if filters.get("to_date") and filters.get("from_date"):
-
 			if sr.creation_date < frappe.utils.getdate(filters.get("from_date")):
 				start = frappe.utils.getdate(filters.get("from_date"))
 				end = sr.delivery_date
@@ -124,10 +123,10 @@ def execute(filters=None):
 				"delivery_docname": sr.delivery_document_no,
 				"item_code": sr.item_code,
 				"customer": sr.customer,
-				"project_i": item_wise_i.project if item_wise_i else "-",
-				"commission_i": item_wise_i.kommission if item_wise_i else "-",
-				"project_t":  item_wise_t.project if item_wise_t else "-",
-				"commission_t": item_wise_t.kommission if item_wise_t else "-"
+				"project_i": item_wise_i.project if item_wise_i else "",
+				"commission_i": item_wise_i.kommission if item_wise_i else "",
+				"project_t":  item_wise_t.project if item_wise_t else "",
+				"commission_t": item_wise_t.kommission if item_wise_t else ""
 			}
 		)
 		
@@ -138,22 +137,26 @@ def get_columns():
 		{
 			"label": frappe._("ID"),
 			"fieldname": "sr_id",
-			"fieldtype": "Data",
+			"fieldtype": "Link",
+			"options": "Serial No"
 		},
 		{
 			"label": frappe._("Item Code"),
 			"fieldname": "item_code",
-			"fieldtype": "Data",
+			"fieldtype": "Link",
+			"options": "Item"
 		},
 		{
 			"label": frappe._("Creation Doctype"),
 			"fieldname": "creation_doctype",
-			"fieldtype": "Data",
+			"fieldtype": "Select",
+			"options": "Purchase Receipt\nStock Entry"
 		},
 		{
 			"label": frappe._("Creation Docname"),
 			"fieldname": "creation_docname",
-			"fieldtype": "Data",
+			"fieldtype": "Dynamic Link",
+			"options": "creation_doctype"
 		},
 		{
 			"label": frappe._("Creation Date"),
@@ -163,12 +166,14 @@ def get_columns():
 		{
 			"label": frappe._("Delivery Doctype"),
 			"fieldname": "delivery_doctype",
-			"fieldtype": "Data",
+			"fieldtype": "Select",
+			"options": "Delivery Note\nStock Entry"
 		},
 		{
 			"label": frappe._("Delivery Docname"),
 			"fieldname": "delivery_docname",
-			"fieldtype": "Data",
+			"fieldtype": "Dynamic Link",
+			"options": "delivery_doctype"
 		},
 		{
 			"label": frappe._("Delivery Date"),
