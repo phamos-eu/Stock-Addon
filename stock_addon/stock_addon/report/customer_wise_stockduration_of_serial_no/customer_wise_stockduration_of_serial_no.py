@@ -12,6 +12,11 @@ def execute(filters=None):
 	# 	_filters = _filters + "purchase_date between '" + filters.get("from_date") + "' and '" + filters.get("to_date") +"' OR delivery_date between '"+filters.get("from_date") + "' and '" + filters.get("to_date") +"'" if filters.get("from_date") and filters.get("to_date")  else ""
 	if filters.get("customer"):
 		columns.append({
+			"label": frappe._("Lagerkosten"),
+			"fieldname": "storage_cost",
+			"fieldtype": "Currency"
+  		})
+		columns.append({
 			"fieldname":"customer",
 			"label": frappe._("Customer"),
 			"fieldtype": "Link",
@@ -103,7 +108,13 @@ def execute(filters=None):
 				end = frappe.utils.getdate(filters.get("to_date"))
 				if delivery_date < frappe.utils.getdate(filters.get("to_date")):
 					end = delivery_date
-
+		storage_factor = frappe.db.get_value("Item", sr.item_code, 'lagerplatzfaktor') or 0
+		cost_per_customer = frappe.db.get_value("Customer", sr.customer, 'lagerplatzkosten') or 0
+		storage_cost = 0
+		try:
+			storage_cost = diff/storage_factor*cost_per_customer
+		except Exception as e:
+			storage_cost = 0
 		diff = date_diff(end, start)
 		if diff >= 0:
 			diff = diff+1
@@ -126,7 +137,8 @@ def execute(filters=None):
 				"project_i": item_wise_i.project if item_wise_i else "",
 				"commission_i": item_wise_i.kommission if item_wise_i else "",
 				"project_t":  item_wise_t.project if item_wise_t else "",
-				"commission_t": item_wise_t.kommission if item_wise_t else ""
+				"commission_t": item_wise_t.kommission if item_wise_t else "",
+				"storage_cost":storage_cost #Lagerkosten [€] (Automatische Berechnung = Lagerdauer / Lagerplatzfaktor * Lagerplatzkosten 
 			}
 		)
 		
