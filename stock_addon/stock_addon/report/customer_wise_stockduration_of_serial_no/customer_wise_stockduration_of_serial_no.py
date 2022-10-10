@@ -108,16 +108,15 @@ def execute(filters=None):
 				end = frappe.utils.getdate(filters.get("to_date"))
 				if delivery_date < frappe.utils.getdate(filters.get("to_date")):
 					end = delivery_date
-		storage_factor = frappe.db.get_value("Item", sr.item_code, 'lagerplatzfaktor') or 0
-		cost_per_customer = frappe.db.get_value("Customer", sr.customer, 'lagerplatzkosten') or 0
-		storage_cost = 0
-		try:
-			storage_cost = diff/storage_factor*cost_per_customer
-		except Exception as e:
-			storage_cost = 0
 		diff = date_diff(end, start)
+
 		if diff >= 0:
 			diff = diff+1
+			storage_factor = frappe.db.get_value("Item", sr.item_code, 'lagerplatzfaktor') or 1
+			cost_per_customer = frappe.db.get_value("Customer", sr.customer, 'lagerplatzkosten') or 1
+			storage_cost = diff/storage_factor*cost_per_customer
+			if storage_factor == 1 or cost_per_customer == 1:
+				storage_cost = 0
 
 		if diff < 0:
 			continue

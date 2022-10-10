@@ -8,16 +8,12 @@ frappe.query_reports["Customer wise Stockduration of Serial No"] = {
 			"fieldname":"from_date",
 			"label": __("From Date"),
 			"fieldtype": "Date",
-			// "default": frappe.datetime.add_months(frappe.datetime.get_today(), -1),
-			// "reqd": 1,
 			"width": "60px"
 		},
 		{
 			"fieldname":"to_date",
 			"label": __("To Date"),
 			"fieldtype": "Date",
-			// "default": frappe.datetime.get_today(),
-			// "reqd": 1,
 			"width": "60px"
 		},
 		{
@@ -25,8 +21,6 @@ frappe.query_reports["Customer wise Stockduration of Serial No"] = {
 			"label": __("Choose Customer"),
 			"fieldtype": "Link",
 			"options": "Customer",
-			// "default": frappe.datetime.get_today(),
-			// "reqd": 1,
 			"width": "60px"
 		},
 		{
@@ -34,8 +28,6 @@ frappe.query_reports["Customer wise Stockduration of Serial No"] = {
 			"label": __(""),
 			"fieldtype": "Select",
 			"options": ["",__("Item Wise"),__("Transaction Wise")],
-			// "default": frappe.datetime.get_today(),
-			// "reqd": 1,
 			"width": "60px"
 		}
 	]
