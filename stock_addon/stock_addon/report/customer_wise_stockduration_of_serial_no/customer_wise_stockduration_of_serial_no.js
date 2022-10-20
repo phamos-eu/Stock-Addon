@@ -1,6 +1,6 @@
-// Copyright (c) 2022, MIT and contributors
-// For license information, please see license.txt
-/* eslint-disable */
+// Built by Devarsh Bhatt at Genirex
+// Contact devarsh@genirex.com
+
 
 frappe.query_reports["Customer wise Stockduration of Serial No"] = {
 	"filters": [
@@ -21,13 +21,6 @@ frappe.query_reports["Customer wise Stockduration of Serial No"] = {
 			"label": __("Choose Customer"),
 			"fieldtype": "Link",
 			"options": "Customer",
-			"width": "60px"
-		},
-		{
-			"fieldname":"commission_by",
-			"label": __(""),
-			"fieldtype": "Select",
-			"options": ["",__("Item Wise"),__("Transaction Wise")],
 			"width": "60px"
 		}
 	]

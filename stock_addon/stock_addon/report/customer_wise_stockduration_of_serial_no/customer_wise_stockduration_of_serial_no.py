@@ -6,10 +6,6 @@ from frappe.utils import date_diff
 
 def execute(filters=None):
 	columns = get_columns()
-	_filters = ""
-	# if filters:
-	# 	_filters = "where "
-	# 	_filters = _filters + "purchase_date between '" + filters.get("from_date") + "' and '" + filters.get("to_date") +"' OR delivery_date between '"+filters.get("from_date") + "' and '" + filters.get("to_date") +"'" if filters.get("from_date") and filters.get("to_date")  else ""
 	if filters.get("customer"):
 		columns.append({
 			"label": frappe._("Lagerkosten"),
@@ -22,70 +18,40 @@ def execute(filters=None):
 			"fieldtype": "Link",
 			"options": "Customer"
 		})
-		if "where" in _filters:
-			_filters = _filters + " and "
-		else:
-			_filters = _filters + "where "
-		_filters = _filters + "customer = '" + filters.get("customer") + "'"
-
-	if filters.get("commission_by"):
-		if filters.get("commission_by") == frappe._("Item Wise"):
-			columns.append({
-				"fieldname":"commission_i",
-				"label": frappe._("Kommission (I)"),
-				"fieldtype": "Data"
-			})
-			columns.append({
-				"fieldname":"project_i",
-				"label": frappe._("Project (I)"),
-				"fieldtype": "Link",
-				"options": "Project"
-			})
-
-		if filters.get("commission_by") == frappe._("Transaction Wise"):
-			columns.append({
-				"fieldname":"commission_t",
-				"label": frappe._("Kommission (T)"),
-				"fieldtype": "Data",
-			})
-			columns.append({
-				"fieldname":"project_t",
-				"label": frappe._("Project (T)"),
-				"fieldtype": "Link",
-				"options": "Project"
-			})
-
+		columns.append({
+			"fieldname":"commission",
+			"label": frappe._("Kommission"),
+			"fieldtype": "Data",
+		})
+		columns.append({
+			"fieldname":"project",
+			"label": frappe._("Project"),
+			"fieldtype": "Link",
+			"options": "Project"
+		})
+  
 	data = []
 	_query = """
 	select name as sr_id, 
 	item_code,
-	customer,
 	purchase_date as creation_date, 
 	delivery_date, 
 	purchase_document_type, 
 	delivery_document_type, 
 	purchase_document_no, 
 	delivery_document_no 
-	from `tabSerial No` {};
-	""".format(_filters) 
-
+	from `tabSerial No`;
+	"""
 	serial_items = frappe.db.sql(_query, as_dict= True)
 	for sr in serial_items:
-		item_wise_i = None
-		item_wise_t = None
+		transaction_wise_data = None
 		delivery_date = frappe.utils.getdate(sr.delivery_date if sr.delivery_date else frappe.utils.nowdate())
-
-		if filters.get("commission_by") == frappe._("Item Wise"):
-			if sr.purchase_document_type == "Purchase Receipt":
-				item_wise_i = frappe.db.get_value("Purchase Receipt",  sr.purchase_document_no, ["project", "kommission"],as_dict=1)
-			if sr.purchase_document_type == "Stock Entry":
-				item_wise_i = frappe.db.get_value("Stock Entry Detail", sr.purchase_document_no, ["project", "kommission"],as_dict=1)
-	
-		if filters.get("commission_by") == frappe._("Transaction Wise"):
-			if sr.purchase_document_type == "Purchase Receipt":
-				item_wise_t = frappe.db.get_value("Purchase Receipt Item", {"parent": sr.purchase_document_no}, ["project", "kommission"],as_dict=1)
-			if sr.purchase_document_type == "Stock Entry":
-				item_wise_t = frappe.db.get_value("Stock Entry Detail", {"parent":sr.purchase_document_no}, ["project", "kommission"],as_dict=1)
+		if sr.purchase_document_type == "Purchase Receipt":
+			transaction_wise_data = frappe.db.get_value("Purchase Receipt", sr.purchase_document_no, ["project", "kommission", "customer"],as_dict=1)
+			sr.update({"customer":transaction_wise_data.customer })
+		if sr.purchase_document_type == "Stock Entry":
+			transaction_wise_data = frappe.db.get_value("Stock Entry", sr.purchase_document_no, ["project", "kommission", "customer"],as_dict=1)
+			sr.update({"customer":transaction_wise_data.customer })
 
 		start = sr.creation_date
 		end = sr.delivery_date
@@ -118,11 +84,11 @@ def execute(filters=None):
 				storage_cost = 0
 			else:
 				storage_cost = diff/storage_factor*cost_per_customer
-				
 
 		if diff < 0:
 			continue
-
+		if filters.get("customer") and transaction_wise_data and transaction_wise_data.customer != filters.get("customer"):
+			continue
 		data.append(
 			{
 				"sr_id":sr.sr_id,
@@ -134,11 +100,9 @@ def execute(filters=None):
 				"creation_docname": sr.purchase_document_no,
 				"delivery_docname": sr.delivery_document_no,
 				"item_code": sr.item_code,
-				"customer": sr.customer,
-				"project_i": item_wise_i.project if item_wise_i else "",
-				"commission_i": item_wise_i.kommission if item_wise_i else "",
-				"project_t":  item_wise_t.project if item_wise_t else "",
-				"commission_t": item_wise_t.kommission if item_wise_t else "",
+				"customer": transaction_wise_data.customer if transaction_wise_data else "",
+				"project":  transaction_wise_data.project if transaction_wise_data else "",
+				"commission": transaction_wise_data.kommission if transaction_wise_data else "",
 				"storage_cost":storage_cost #Lagerkosten [€] (Automatische Berechnung = Lagerdauer / Lagerplatzfaktor * Lagerplatzkosten 
 			}
 		)
