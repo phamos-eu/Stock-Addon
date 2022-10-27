@@ -89,6 +89,8 @@ def execute(filters=None):
 			continue
 		if filters.get("customer") and transaction_wise_data and transaction_wise_data.customer != filters.get("customer"):
 			continue
+		if filters.get("project") and transaction_wise_data and transaction_wise_data.project != filters.get("project"):
+			continue
 		data.append(
 			{
 				"sr_id":sr.sr_id,

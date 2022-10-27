@@ -22,6 +22,14 @@ frappe.query_reports["Customer wise Stockduration of Serial No"] = {
 			"fieldtype": "Link",
 			"options": "Customer",
 			"width": "60px"
+		},
+		{
+			"fieldname":"project",
+			"label": __("Choose Project"),
+			"fieldtype": "Link",
+			"options": "Project",
+			"width": "60px",
+			"depends_on": 'eval:doc.customer'
 		}
 	]
 };
