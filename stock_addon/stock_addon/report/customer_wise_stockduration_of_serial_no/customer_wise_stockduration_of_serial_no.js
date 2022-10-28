@@ -30,6 +30,16 @@ frappe.query_reports["Customer wise Stockduration of Serial No"] = {
 			"options": "Project",
 			"width": "60px",
 			"depends_on": 'eval:doc.customer'
+		},
+		{
+			"fieldname":"commission",
+			"label": __('Kommission'),
+			"fieldtype": "MultiSelectList",
+			"width": "60px",
+			"get_data": function(txt) {
+				return frappe.db.get_link_options('Commission', txt);
+			},
+			"depends_on": 'eval:doc.customer'
 		}
 	]
 };

@@ -10,24 +10,28 @@ def execute(filters=None):
 		columns.append({
 			"label": frappe._("Lagerkosten"),
 			"fieldname": "storage_cost",
-			"fieldtype": "Currency"
+			"fieldtype": "Currency",
+			"width": "130px"
   		})
 		columns.append({
 			"fieldname":"customer",
 			"label": frappe._("Customer"),
 			"fieldtype": "Link",
-			"options": "Customer"
+			"options": "Customer",
+			"width": "150px"
 		})
 		columns.append({
 			"fieldname":"commission",
 			"label": frappe._("Kommission"),
 			"fieldtype": "Data",
+			"width": "150px"
 		})
 		columns.append({
 			"fieldname":"project",
 			"label": frappe._("Project"),
 			"fieldtype": "Link",
-			"options": "Project"
+			"options": "Project",
+			"width": "150px"
 		})
   
 	data = []
@@ -47,11 +51,19 @@ def execute(filters=None):
 		transaction_wise_data = None
 		delivery_date = frappe.utils.getdate(sr.delivery_date if sr.delivery_date else frappe.utils.nowdate())
 		if sr.purchase_document_type == "Purchase Receipt":
-			transaction_wise_data = frappe.db.get_value("Purchase Receipt", sr.purchase_document_no, ["project", "kommission", "customer"],as_dict=1)
+			# frappe.msgprint("Add Commission here")
+			transaction_wise_data = frappe.db.get_value("Purchase Receipt", sr.purchase_document_no, ["project", "customer"],as_dict=1)
 			sr.update({"customer":transaction_wise_data.customer })
 		if sr.purchase_document_type == "Stock Entry":
-			transaction_wise_data = frappe.db.get_value("Stock Entry", sr.purchase_document_no, ["project", "kommission", "customer"],as_dict=1)
+			transaction_wise_data = frappe.db.get_value("Stock Entry", sr.purchase_document_no, ["project", "commission", "customer"],as_dict=1)
 			sr.update({"customer":transaction_wise_data.customer })
+
+		if filters.get("customer") and transaction_wise_data and transaction_wise_data.customer != filters.get("customer"):
+			continue
+		if filters.get("project") and transaction_wise_data and transaction_wise_data.project != filters.get("project"):
+			continue
+		if filters.get("commission") and transaction_wise_data and transaction_wise_data.commission not in filters.get("commission"):
+			continue
 
 		start = sr.creation_date
 		end = sr.delivery_date
@@ -87,10 +99,6 @@ def execute(filters=None):
 
 		if diff < 0:
 			continue
-		if filters.get("customer") and transaction_wise_data and transaction_wise_data.customer != filters.get("customer"):
-			continue
-		if filters.get("project") and transaction_wise_data and transaction_wise_data.project != filters.get("project"):
-			continue
 		data.append(
 			{
 				"sr_id":sr.sr_id,
@@ -104,7 +112,7 @@ def execute(filters=None):
 				"item_code": sr.item_code,
 				"customer": transaction_wise_data.customer if transaction_wise_data else "",
 				"project":  transaction_wise_data.project if transaction_wise_data else "",
-				"commission": transaction_wise_data.kommission if transaction_wise_data else "",
+				"commission": transaction_wise_data.commission if transaction_wise_data else "",
 				"storage_cost":storage_cost #Lagerkosten [€] (Automatische Berechnung = Lagerdauer / Lagerplatzfaktor * Lagerplatzkosten 
 			}
 		)
@@ -117,52 +125,61 @@ def get_columns():
 			"label": frappe._("ID"),
 			"fieldname": "sr_id",
 			"fieldtype": "Link",
-			"options": "Serial No"
+			"options": "Serial No",
+			"width": "140px"
 		},
 		{
 			"label": frappe._("Item Code"),
 			"fieldname": "item_code",
 			"fieldtype": "Link",
-			"options": "Item"
+			"options": "Item",
+			"width": "140px"
 		},
 		{
 			"label": frappe._("Creation Doctype"),
 			"fieldname": "creation_doctype",
 			"fieldtype": "Select",
-			"options": "Purchase Receipt\nStock Entry"
+			"options": "Purchase Receipt\nStock Entry",
+			"width": "130px"
 		},
 		{
 			"label": frappe._("Creation Docname"),
 			"fieldname": "creation_docname",
 			"fieldtype": "Dynamic Link",
-			"options": "creation_doctype"
+			"options": "creation_doctype",
+			"width": "180px"
 		},
 		{
 			"label": frappe._("Creation Date"),
 			"fieldname": "creation_date",
 			"fieldtype": "Data",
+			"width": "100px"
 		},
 		{
 			"label": frappe._("Delivery Doctype"),
 			"fieldname": "delivery_doctype",
 			"fieldtype": "Select",
-			"options": "Delivery Note\nStock Entry"
+			"options": "Delivery Note\nStock Entry",
+			"width": "100px"
 		},
 		{
 			"label": frappe._("Delivery Docname"),
 			"fieldname": "delivery_docname",
 			"fieldtype": "Dynamic Link",
-			"options": "delivery_doctype"
+			"options": "delivery_doctype",
+			"width": "180px"
 		},
 		{
 			"label": frappe._("Delivery Date"),
 			"fieldname": "delivery_date",
 			"fieldtype": "date",
+			"width": "100px"
 		},
 		{
 			"label": frappe._("Total No of Days in Stock"),
 			"fieldname": "dis",
 			"fieldtype": "Int",
+			"width": "60px"
 		}
 	]
 	return columns
