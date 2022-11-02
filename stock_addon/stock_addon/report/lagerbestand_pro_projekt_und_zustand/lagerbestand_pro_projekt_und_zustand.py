@@ -26,8 +26,8 @@ def execute(filters=None):
 		# if filters.get("filter_date"):
 			# sle = frappe.db.sql("select voucher_no, posting_date from `tabStock Ledger Entry` where item_code = '{}' AND posting_date = '{}' order by posting_date desc limit 1".format(i,filters.get("filter_date")),as_dict=True) or None
 			# print("------------------", sle, filters.get("filter_date"))
-		# if not sle:
-			# continue
+		if not sle:
+			continue
 		se = frappe.db.get_value("Stock Entry", sle[0].voucher_no, ["project"])
 		sed = frappe.db.get_value("Stock Entry Detail", {"parent": sle[0].voucher_no,"item_code": i}, ["project"])
 		new_ = frappe.db.count("Serial No", {"zustand": "Neu", "item_code": i, "status": ['!=', "Delivered"]})
