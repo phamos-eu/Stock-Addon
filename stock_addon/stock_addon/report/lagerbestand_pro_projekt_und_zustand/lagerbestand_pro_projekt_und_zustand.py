@@ -1,12 +1,16 @@
 #Built by Devarsh Bhatt at Genirex
 #Contact devarsh@genirex.com
 
-import json
 import frappe
 from erpnext.stock.dashboard.item_dashboard import get_data
+from frappe.utils import date_diff
+
 def execute(filters=None):
 	columns = get_columns()
 	data = []
+	date_filter = ""
+	if filters.get("filter_date"):
+		date_filter = " and posting_date = '{}'".format(filters.get("filter_date"))
 	stocks_per_item = get_data()
 	item_total_stock = {}
 	for stock in stocks_per_item:
@@ -14,22 +18,24 @@ def execute(filters=None):
 			item_total_stock.update({stock.item_code: item_total_stock[stock.item_code] + stock.actual_qty})
 		else:
 			item_total_stock.update({stock.item_code: stock.actual_qty})
-		# print(stock,"===========")
-	# query_ = """
-	# 	select name, item_code , qty_after_transaction as actual_qty, posting_date as date, serial_no, 
-	# 	from `tabStock Ledger Entry`;
-	# """
-	# stock_serial_item= []
 	stock_serial_item = [item.name for item in frappe.db.sql("select name from `tabItem` where is_stock_item = 1 and has_serial_no = 1",as_dict=True)]
 	for i in stock_serial_item:
-		sle = frappe.db.sql("select voucher_no, posting_date from `tabStock Ledger Entry` where item_code = '{}' order by posting_date desc limit 1".format(i),as_dict=True)
-		# if filters.get("filter_date"):
-			# sle = frappe.db.sql("select voucher_no, posting_date from `tabStock Ledger Entry` where item_code = '{}' AND posting_date = '{}' order by posting_date desc limit 1".format(i,filters.get("filter_date")),as_dict=True) or None
-			# print("------------------", sle, filters.get("filter_date"))
+		sle = frappe.db.sql("select voucher_no, posting_date from `tabStock Ledger Entry` where item_code = '{}' {} order by posting_date desc limit 1".format(i,date_filter),as_dict=True)
 		if not sle:
 			continue
-		se = frappe.db.get_value("Stock Entry", sle[0].voucher_no, ["project"])
-		sed = frappe.db.get_value("Stock Entry Detail", {"parent": sle[0].voucher_no,"item_code": i}, ["project"])
+		if filters.get('project_receipt'):
+			se = frappe.db.get_value("Stock Entry", {"name":sle[0].voucher_no,"project": filters.get('project_receipt')}, ["project"])
+			if not se :
+				continue
+		else:		
+			se = frappe.db.get_value("Stock Entry", sle[0].voucher_no, ["project"])
+		if filters.get('project_position'):
+			sed = frappe.db.get_value("Stock Entry Detail", {"parent": sle[0].voucher_no,"item_code": i, "project": filters.get('project_position')}, ["project"])
+			if not sed:
+				continue
+		else:
+			sed = frappe.db.get_value("Stock Entry Detail", {"parent": sle[0].voucher_no,"item_code": i}, ["project"])
+
 		new_ = frappe.db.count("Serial No", {"zustand": "Neu", "item_code": i, "status": ['!=', "Delivered"]})
 		used_ = frappe.db.count("Serial No", {"zustand": "Gebraucht", "item_code": i, "status": ['!=', "Delivered"]})
 		broken_ = frappe.db.count("Serial No", {"zustand": "Defekt", "item_code": i, "status": ['!=', "Delivered"]})
@@ -43,34 +49,10 @@ def execute(filters=None):
 			"used": used_,
 			"broken": broken_
 		})
-	# data_ = []
-	# for d in data:
-	# 	if filters and filters.get("filter_date") and filters.get("filter_date") == d['date'].strftime("%Y-%m-%d"):
-	# 		data_.append(d)
-	# 	if data_:
-	# 		data = data_
-	# 		# data_ = []
-	# 	if filters and filters.get("project_receipt") and filters.get("project_receipt") == d['project_receipt']:
-	# 		data_.append(d)
-	# 	if data_:
-	# 		data = data_
-		# 	data_ = []
-		# if filters and filters.get("project_position") and filters.get("project_position") == d['project_position']:
-		# 	data_.append(d)
-		# if data_:
-		# 	data = data_
-		# 	data_ = []
 
 	return columns, data
 def get_columns():
 	columns = [
-		# {
-		# 	"label": frappe._("Stock Ledger Entry"),
-		# 	"fieldname": "sle",
-		# 	"fieldtype": "Link",
-		# 	"options": "Stock Ledger Entry",
-		# 	"width": "120px"
-		# },
 		{
 			"label": frappe._("Artikel"),
 			"fieldname": "item_code",
@@ -78,12 +60,6 @@ def get_columns():
 			"options": "Item",
 			"width": "120px"
 		},
-		# {
-		# 	"label": frappe._("Lagerhaus"),
-		# 	"fieldname": "warehouse",
-		# 	"fieldtype": "Link",
-		# 	"options": "Warehouse"
-		# },
 		{
 			"label": frappe._("Project Beleg"),
 			"fieldname": "project_receipt",
