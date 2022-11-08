@@ -4,5 +4,5 @@
 # import frappe
 import unittest
 
-class TestCommission(unittest.TestCase):
+class TestKommission(unittest.TestCase):
 	pass

@@ -2,7 +2,7 @@
  "actions": [],
  "allow_rename": 1,
  "autoname": "field:title",
- "creation": "2022-10-28 12:56:15.009022",
+ "creation": "2022-11-08 16:13:44.299541",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -21,10 +21,10 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-10-28 12:56:15.009022",
+ "modified": "2022-11-08 16:13:44.299541",
  "modified_by": "Administrator",
  "module": "Stock Addon",
- "name": "Commission",
+ "name": "Kommission",
  "owner": "Administrator",
  "permissions": [
   {
