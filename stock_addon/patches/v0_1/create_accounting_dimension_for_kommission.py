@@ -10,6 +10,4 @@ def execute():
 	ad.label= "Kommission"
 	ad.insert(ignore_permissions=True)
 	ad.save()
-	print(ad)
 	frappe.db.commit()
-	

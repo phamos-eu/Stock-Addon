@@ -32,12 +32,12 @@ frappe.query_reports["Customer wise Stockduration of Serial No"] = {
 			"depends_on": 'eval:doc.customer'
 		},
 		{
-			"fieldname":"commission",
+			"fieldname":"kommission",
 			"label": __('Kommission'),
 			"fieldtype": "MultiSelectList",
 			"width": "60px",
 			"get_data": function(txt) {
-				return frappe.db.get_link_options('Commission', txt);
+				return frappe.db.get_link_options('Kommission', txt);
 			},
 			"depends_on": 'eval:doc.customer'
 		}

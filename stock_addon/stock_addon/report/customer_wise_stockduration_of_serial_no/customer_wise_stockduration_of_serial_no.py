@@ -21,7 +21,7 @@ def execute(filters=None):
 			"width": "150px"
 		})
 		columns.append({
-			"fieldname":"commission",
+			"fieldname":"kommission",
 			"label": frappe._("Kommission"),
 			"fieldtype": "Data",
 			"width": "150px"
@@ -51,18 +51,17 @@ def execute(filters=None):
 		transaction_wise_data = None
 		delivery_date = frappe.utils.getdate(sr.delivery_date if sr.delivery_date else frappe.utils.nowdate())
 		if sr.purchase_document_type == "Purchase Receipt":
-			# frappe.msgprint("Add Commission here")
 			transaction_wise_data = frappe.db.get_value("Purchase Receipt", sr.purchase_document_no, ["project", "customer"],as_dict=1)
 			sr.update({"customer":transaction_wise_data.customer })
 		if sr.purchase_document_type == "Stock Entry":
-			transaction_wise_data = frappe.db.get_value("Stock Entry", sr.purchase_document_no, ["project", "commission", "customer"],as_dict=1)
+			transaction_wise_data = frappe.db.get_value("Stock Entry", sr.purchase_document_no, ["project", "kommission", "customer"],as_dict=1)
 			sr.update({"customer":transaction_wise_data.customer })
 
 		if filters.get("customer") and transaction_wise_data and transaction_wise_data.customer != filters.get("customer"):
 			continue
 		if filters.get("project") and transaction_wise_data and transaction_wise_data.project != filters.get("project"):
 			continue
-		if filters.get("commission") and transaction_wise_data and transaction_wise_data.commission not in filters.get("commission"):
+		if filters.get("kommission") and transaction_wise_data and transaction_wise_data.kommission not in filters.get("kommission"):
 			continue
 
 		start = sr.creation_date
@@ -112,7 +111,7 @@ def execute(filters=None):
 				"item_code": sr.item_code,
 				"customer": transaction_wise_data.customer if transaction_wise_data else "",
 				"project":  transaction_wise_data.project if transaction_wise_data else "",
-				"commission": transaction_wise_data.commission if transaction_wise_data else "",
+				"kommission": transaction_wise_data.kommission if transaction_wise_data else "",
 				"storage_cost":storage_cost #Lagerkosten [€] (Automatische Berechnung = Lagerdauer / Lagerplatzfaktor * Lagerplatzkosten 
 			}
 		)
