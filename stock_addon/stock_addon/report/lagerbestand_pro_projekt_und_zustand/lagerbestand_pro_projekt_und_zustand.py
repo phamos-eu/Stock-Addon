@@ -20,6 +20,7 @@ def execute(filters=None):
 			item_total_stock.update({stock.item_code: stock.actual_qty})
 	stock_serial_item = [item.name for item in frappe.db.sql("select name from `tabItem` where is_stock_item = 1 and has_serial_no = 1",as_dict=True)]
 	for i in stock_serial_item:
+		i = i.replace("  "," ") #temp fix for item issue
 		sle = frappe.db.sql("select voucher_no, posting_date from `tabStock Ledger Entry` where item_code = '{}' {} order by posting_date desc limit 1".format(i,date_filter),as_dict=True)
 		if not sle:
 			continue
