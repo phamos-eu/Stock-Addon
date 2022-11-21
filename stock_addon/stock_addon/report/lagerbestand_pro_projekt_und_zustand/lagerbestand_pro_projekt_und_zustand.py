@@ -2,8 +2,6 @@
 #Contact devarsh@genirex.com
 
 import frappe
-from erpnext.stock.dashboard.item_dashboard import get_data
-from frappe.utils import date_diff
 
 def execute(filters=None):
 	columns = get_columns()
@@ -11,18 +9,9 @@ def execute(filters=None):
 	date_filter = ""
 	if filters.get("filter_date"):
 		date_filter = " and posting_date = '{}'".format(filters.get("filter_date"))
-	stocks_per_item = get_data()
-	item_total_stock = {}
-
-	stock_serial_item = [item.name for item in frappe.db.sql("select name from `tabItem` where is_stock_item = 1 and has_serial_no = 1",as_dict=True)]
-	for i in stock_serial_item:
-		stocks_per_item = get_data(item_code=i)
-		for stock in stocks_per_item:
-			if stock.item_code in item_total_stock:
-				item_total_stock.update({stock.item_code: item_total_stock[stock.item_code] + stock.actual_qty})
-			else:
-				item_total_stock.update({stock.item_code: stock.actual_qty})
-		sle = frappe.db.sql("select voucher_no, posting_date from `tabStock Ledger Entry` where item_code = '{}' {} order by posting_date desc limit 1".format(i,date_filter),as_dict=True)
+	bin_item_qty = frappe.db.sql("select sum(actual_qty) as actual_qty, item_code from `tabBin` group by item_code",as_dict=1)
+	for biq in bin_item_qty:
+		sle = frappe.db.sql("select voucher_no, posting_date from `tabStock Ledger Entry` where item_code = '{}' {} order by posting_date desc limit 1".format(biq.item_code,date_filter),as_dict=True)
 		if not sle:
 			continue
 		if filters.get('project_receipt'):
@@ -32,18 +21,18 @@ def execute(filters=None):
 		else:		
 			se = frappe.db.get_value("Stock Entry", sle[0].voucher_no, ["project"])
 		if filters.get('project_position'):
-			sed = frappe.db.get_value("Stock Entry Detail", {"parent": sle[0].voucher_no,"item_code": i, "project": filters.get('project_position')}, ["project"])
+			sed = frappe.db.get_value("Stock Entry Detail", {"parent": sle[0].voucher_no,"item_code": biq.item_code, "project": filters.get('project_position')}, ["project"])
 			if not sed:
 				continue
 		else:
-			sed = frappe.db.get_value("Stock Entry Detail", {"parent": sle[0].voucher_no,"item_code": i}, ["project"])
+			sed = frappe.db.get_value("Stock Entry Detail", {"parent": sle[0].voucher_no,"item_code": biq.item_code}, ["project"])
 
-		new_ = frappe.db.count("Serial No", {"zustand": "Neu", "item_code": i, "status": ['!=', "Delivered"]})
-		used_ = frappe.db.count("Serial No", {"zustand": "Gebraucht", "item_code": i, "status": ['!=', "Delivered"]})
-		broken_ = frappe.db.count("Serial No", {"zustand": "Defekt", "item_code": i, "status": ['!=', "Delivered"]})
+		new_ = frappe.db.count("Serial No", {"zustand": "Neu", "item_code": biq.item_code, "status": ['!=', "Delivered"]})
+		used_ = frappe.db.count("Serial No", {"zustand": "Gebraucht", "item_code": biq.item_code, "status": ['!=', "Delivered"]})
+		broken_ = frappe.db.count("Serial No", {"zustand": "Defekt", "item_code": biq.item_code, "status": ['!=', "Delivered"]})
 		data.append({
-			"item_code": i,
-			"actual_qty":item_total_stock[i],
+			"item_code": biq.item_code,
+			"actual_qty":biq.actual_qty,
 			"project_receipt":se or "", #transaction
 			"project_position":sed or "", #Child 
 			"date":sle[0].posting_date, #Latest transaction
