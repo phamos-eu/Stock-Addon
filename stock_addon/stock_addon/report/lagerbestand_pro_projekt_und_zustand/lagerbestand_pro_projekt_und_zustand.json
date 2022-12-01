@@ -1,5 +1,5 @@
 {
- "add_total_row": 0,
+ "add_total_row": 1,
  "columns": [],
  "creation": "2022-10-12 12:30:49.214841",
  "disable_prepared_report": 0,
@@ -9,13 +9,13 @@
  "filters": [],
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2022-10-12 12:31:57.847104",
+ "modified": "2022-11-30 14:59:15.996022",
  "modified_by": "Administrator",
  "module": "Stock Addon",
  "name": "Lagerbestand pro Projekt und Zustand",
  "owner": "Administrator",
  "prepared_report": 0,
- "ref_doctype": "Stock Ledger Entry",
+ "ref_doctype": "Serial No",
  "report_name": "Lagerbestand pro Projekt und Zustand",
  "report_type": "Script Report",
  "roles": [

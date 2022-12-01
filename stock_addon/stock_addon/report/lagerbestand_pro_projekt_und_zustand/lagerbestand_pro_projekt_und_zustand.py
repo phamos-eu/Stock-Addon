@@ -1,44 +1,31 @@
-#Built by Devarsh Bhatt at Genirex
-#Contact devarsh@genirex.com
+#Built by Devarsh Bhatt at Phamos
+#Contact devarsh.bhat@phamos.eu
 
 import frappe
 
 def execute(filters=None):
 	columns = get_columns()
 	data = []
-	date_filter = ""
+	where = "1=1"
+	if filters.get("project_position"):
+		where = f"{where} and project = '{filters.get('project_position')}'"
 	if filters.get("filter_date"):
-		date_filter = " and posting_date = '{}'".format(filters.get("filter_date"))
-	bin_item_qty = frappe.db.sql("select sum(actual_qty) as actual_qty, item_code from `tabBin` group by item_code",as_dict=1)
-	for biq in bin_item_qty:
-		sle = frappe.db.sql("select voucher_no, posting_date from `tabStock Ledger Entry` where item_code = '{}' {} order by posting_date desc limit 1".format(biq.item_code,date_filter),as_dict=True)
-		if not sle:
-			continue
-		if filters.get('project_receipt'):
-			se = frappe.db.get_value("Stock Entry", {"name":sle[0].voucher_no,"project": filters.get('project_receipt')}, ["project"])
-			if not se :
-				continue
-		else:		
-			se = frappe.db.get_value("Stock Entry", sle[0].voucher_no, ["project"])
-		if filters.get('project_position'):
-			sed = frappe.db.get_value("Stock Entry Detail", {"parent": sle[0].voucher_no,"item_code": biq.item_code, "project": filters.get('project_position')}, ["project"])
-			if not sed:
-				continue
-		else:
-			sed = frappe.db.get_value("Stock Entry Detail", {"parent": sle[0].voucher_no,"item_code": biq.item_code}, ["project"])
+		where = f"{where} and purchase_date <= '{filters.get('filter_date')}'"
+	serials = frappe.db.sql(f"select project, purchase_date, item_code, count(item_code) as item_code_count from `tabSerial No` where {where} and status='Active' group by item_code, project order by purchase_date desc" , as_dict=1)
 
-		new_ = frappe.db.count("Serial No", {"zustand": "Neu", "item_code": biq.item_code, "status": ['!=', "Delivered"]})
-		used_ = frappe.db.count("Serial No", {"zustand": "Gebraucht", "item_code": biq.item_code, "status": ['!=', "Delivered"]})
-		broken_ = frappe.db.count("Serial No", {"zustand": "Defekt", "item_code": biq.item_code, "status": ['!=', "Delivered"]})
+	for serial in serials:
+		new_ = frappe.db.sql(f"select count(zustand) as zustand from `tabSerial No` where {where} and status='Active' and item_code = '{serial.get('item_code')}' and project = '{serial.get('project')}' and zustand = 'Neu' group by item_code, project order by purchase_date desc" , as_dict=1) or []
+		used_ = frappe.db.sql(f"select count(zustand) as zustand from `tabSerial No` where {where} and status='Active' and item_code = '{serial.get('item_code')}' and project = '{serial.get('project')}' and zustand = 'Gebraucht' group by item_code, project order by purchase_date desc" , as_dict=1) or []
+		broken_ = frappe.db.sql(f"select count(zustand) as zustand from `tabSerial No` where {where} and status='Active' and item_code = '{serial.get('item_code')}' and project = '{serial.get('project')}' and zustand = 'Defekt' group by item_code, project order by purchase_date desc" , as_dict=1) or []
+
 		data.append({
-			"item_code": biq.item_code,
-			"actual_qty":biq.actual_qty,
-			"project_receipt":se or "", #transaction
-			"project_position":sed or "", #Child 
-			"date":sle[0].posting_date, #Latest transaction
-			"new": new_,
-			"used": used_,
-			"broken": broken_
+			"item_code": serial.get('item_code'),
+			"actual_qty":serial.item_code_count,
+			"project_position":serial.get('project') or "", 
+			"date":serial.get('purchase_date') or "", #Latest transaction
+			"new": new_[0].zustand if new_ else 0,
+			"used": used_[0].zustand if used_ else 0,
+			"broken": broken_[0].zustand if broken_ else 0
 		})
 
 	return columns, data
@@ -50,12 +37,6 @@ def get_columns():
 			"fieldtype": "Link",
 			"options": "Item",
 			"width": "120px"
-		},
-		{
-			"label": frappe._("Project Beleg"),
-			"fieldname": "project_receipt",
-			"fieldtype": "Link",
-			"options": "Project"
 		},
 		{
 			"label": frappe._("Project Position"),
