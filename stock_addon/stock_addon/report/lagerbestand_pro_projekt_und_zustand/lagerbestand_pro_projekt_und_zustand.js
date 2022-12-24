@@ -7,7 +7,8 @@ frappe.query_reports["Lagerbestand pro Projekt und Zustand"] = {
 			"fieldname": "filter_date",
 			"label": __("Datum (Stichtag)"),
 			"fieldtype": "Date",
-			"width": "60px"
+			"width": "60px",
+			"default": frappe.datetime.get_today()
 		},
 		{
 			"fieldname": "project",
