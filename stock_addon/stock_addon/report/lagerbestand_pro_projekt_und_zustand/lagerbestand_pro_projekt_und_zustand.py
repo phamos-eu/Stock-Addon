@@ -4,43 +4,46 @@
 import frappe
 
 def execute(filters=None):
-	columns = get_columns(filters.get('screen_size'))
-	data = []
-	where = ""
-	where_project = ""
-	zustand_where = ""
-	# where_modified = ""
-	if filters.get("project"):
-		where_project = f" where name= '{filters.get('project')}'"
-	if filters.get("filter_date"):
-		where = f"and posting_date <= '{filters.get('filter_date')}'"
-		zustand_where = f"and purchase_date <= '{filters.get('filter_date')}'"
+    columns = get_columns(filters.get('screen_size'))
+    data = []
+    where_clause = ""
 
-	project_list = [v.name for v in frappe.db.sql(f"""select name from `tabProject`{where_project}""",as_dict=1)]
-	project_list.append("")
-	item_list = frappe.get_all("Item", filters={'has_serial_no':1},pluck='name')
+    if filters:
+        if filters.get("project"):
+            where_clause += f" AND sle.project = '{filters.get('project')}'"
+        if filters.get("filter_date"):
+            where_clause += f" AND sle.posting_date <= '{filters.get('filter_date')}'"
 
-	for project in project_list:
-		if project == "":
-			project_conditions = f"and project is NULL"
-		else:
-			project_conditions = f"and project='{project}'"
-		for item in item_list:
-			qty_date = frappe.db.sql(f"""select qty_after_transaction as qty, posting_date from `tabStock Ledger Entry` where item_code='{item}'{project_conditions} {where} order by posting_date desc LIMIT 1""",as_dict=1)
-			if qty_date:
-				new_serial = frappe.db.sql(f"""select count(zustand='Neu') as qty from `tabSerial No` where item_code='{item}'{project_conditions} and status='Active' and zustand='Neu' {zustand_where}""",as_dict=1)
-				used_serial = frappe.db.sql(f"""select count(zustand='Gebrauch') as qty from `tabSerial No` where item_code='{item}'{project_conditions} and status='Active' and zustand='Gebrauch' {zustand_where}""",as_dict=1)
-				defected_serial = frappe.db.sql(f"""select count(zustand='Defekt') as qty from `tabSerial No` where item_code='{item}'{project_conditions} and status='Active' and zustand='Defekt' {zustand_where}""",as_dict=1)
-				data.append({
-					"item_code": item,
-					"project": project,
-					"actual_qty":qty_date[0].get('qty'),
-					"date": qty_date[0].get('posting_date'),
-					"new": new_serial[0].get('qty'),
-					"used": used_serial[0].get('qty'),
-					"broken": defected_serial[0].get('qty')
-				})
-	return columns, data
+    stock_ledger_entries = frappe.db.sql(f"""
+        SELECT sle.item_code, sle.project,
+            SUM(sle.actual_qty) AS actual_qty,
+            (SELECT qty_after_transaction FROM `tabStock Ledger Entry`
+             WHERE item_code = sle.item_code AND posting_date <= sle.posting_date {where_clause}
+             ORDER BY posting_date DESC LIMIT 1) AS qty_after_transaction,
+            MAX(sle.posting_date) AS posting_date,
+            SUM(CASE WHEN sle.zustand = 'Neu' THEN sle.actual_qty ELSE 0 END) AS new,
+            SUM(CASE WHEN sle.zustand = 'Gebraucht' THEN sle.actual_qty ELSE 0 END) AS used,
+            SUM(CASE WHEN sle.zustand = 'Defekt' THEN sle.actual_qty ELSE 0 END) AS broken
+        FROM `tabStock Ledger Entry` sle
+        WHERE sle.docstatus = 1 {where_clause}
+        GROUP BY sle.item_code, sle.project
+        ORDER BY sle.item_code, sle.project
+    """, as_dict=True)
+
+    for sle in stock_ledger_entries:
+        row = {
+            "item_code": sle.item_code,
+            "project": sle.project,
+            "actual_qty": sle.actual_qty,
+            "date": sle.posting_date,
+            "new": sle.new,
+            "used": sle.used,
+            "broken": sle.broken
+        }
+        data.append(row)
+
+    return columns, data
+
 def get_columns(screen_size):
 	columns = [
 		{
@@ -48,14 +51,16 @@ def get_columns(screen_size):
 			"fieldname": "item_code",
 			"fieldtype": "Link",
 			"options": "Item",
-			"width": screen_size*0.3,
+			"width": screen_size*0.25,
 			"align": "left"
 		},
 		{
 			"label": frappe._("Project"),
 			"fieldname": "project",
 			"fieldtype": "Link",
-			"options": "Project"
+			"options": "Project",
+			"width": screen_size*0.07
+   
 		},
 		{
 			"label": frappe._("Lagermenge"),

@@ -98,6 +98,9 @@ app_license = "MIT"
 doc_events = {
 	"Stock Entry": {
 		"on_submit": "stock_addon.stock_addon.custom_hooks.stock_entry.fetch_condition_from_stock_entry",
+	},
+	"Stock Ledger Entry":{
+		"after_insert": "stock_addon.stock_addon.custom_hooks.stock_ledger_entry.fetch_zustand"
 	}
 }
 

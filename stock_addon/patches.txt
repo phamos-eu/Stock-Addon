@@ -1,1 +1,2 @@
 stock_addon.patches.v0_1.create_accounting_dimension_for_kommission
+stock_addon.patches.v0_1.fetch_zustands_for_stock_ledger_entry
